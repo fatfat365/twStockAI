@@ -3,7 +3,7 @@ filelock
 flake8
 importlib-metadata
 joblib
-mccab
+mccabe
 numpy
 platformdirs
 pycodestyle
