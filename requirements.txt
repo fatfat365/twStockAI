@@ -18,3 +18,4 @@ zipp
 uvicorn
 redis
 fastapi
+fastapi-limiter
