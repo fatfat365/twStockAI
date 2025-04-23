@@ -19,3 +19,12 @@ uvicorn
 redis
 fastapi
 fastapi-limiter
+yfinance
+pytz
+talib
+xgboost
+functools
+io
+time
+os
+pandas
