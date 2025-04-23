@@ -21,9 +21,7 @@ fastapi
 fastapi-limiter
 yfinance
 pytz
+ta-lib
 xgboost
 functools
-io
-time
-os
 pandas
