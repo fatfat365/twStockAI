@@ -24,7 +24,7 @@ python-dateutil
 pytz
 redis
 requests
-scikit-learn1
+scikit-learn
 scipy
 six
 sniffio
