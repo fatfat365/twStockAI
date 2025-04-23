@@ -38,3 +38,4 @@ urllib3
 uvicorn
 xgboost
 yfinance
+ta-lib
