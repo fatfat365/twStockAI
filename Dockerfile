@@ -34,8 +34,12 @@ RUN pip install --no-build-isolation TA-Lib==0.4.24
 # 7) 安裝其他相依套件
 RUN pip install -r requirements.txt
 
-# 8) 複製程式並啟動
+# 複製整個 app 包括 start.sh
 COPY . /app
+WORKDIR /app
 
-# 啟動指令：使用 uvicorn 啟動 FastAPI 應用
-CMD uvicorn twStockSrvXGBoots:app --host 0.0.0.0 --port 5555
+# 加上執行權限
+RUN chmod +x start.sh
+
+# 以啟動腳本作為 entrypoint
+ENTRYPOINT ["./start.sh"]
