@@ -36,4 +36,6 @@ RUN pip install -r requirements.txt
 
 # 8) 複製程式並啟動
 COPY . /app
-CMD ["gunicorn", "main:app", "--bind", "0.0.0.0:$PORT", "--workers", "4"]
+
+# 啟動指令：使用 uvicorn 啟動 FastAPI 應用
+CMD ["uvicorn", "twStockSrvXGBoots:app", "--host", "0.0.0.0", "--port", "$PORT"]
