@@ -34,12 +34,6 @@ RUN pip install --no-build-isolation TA-Lib==0.4.24
 # 7) 安裝其他相依套件
 RUN pip install -r requirements.txt
 
-COPY start.sh /app/start.sh
+
 COPY . /app
 WORKDIR /app
-
-# 加上執行權限
-RUN chmod +x start.sh
-
-# shell form → 透過 sh 啟動，$PORT 才會被展開
-ENTRYPOINT /app/start.sh
