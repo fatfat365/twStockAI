@@ -1,7 +1,7 @@
-# 使用官方 Python slim 映像
+# 1) 基底映像
 FROM python:3.10-slim
 
-# 1) 安裝編譯工具與必要套件
+# 2) 安裝編譯工具 & C 原生庫依賴
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       build-essential \
@@ -9,26 +9,28 @@ RUN apt-get update && \
       ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-# 2) 下載並編譯 TA-Lib C 原生庫
+# 3) 下載並編譯 TA-Lib C 原生庫
 RUN wget -qO /tmp/ta-lib-0.4.0-src.tar.gz \
       http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
     mkdir -p /usr/src/ta-lib && \
     tar -xzf /tmp/ta-lib-0.4.0-src.tar.gz -C /usr/src/ta-lib --strip-components=1 && \
     cd /usr/src/ta-lib && \
-      ./configure --prefix=/usr && make && make install && \
+      ./configure --prefix=/usr && \
+      make && \
+      make install && \
     rm -rf /tmp/ta-lib-0.4.0-src.tar.gz /usr/src/ta-lib
 
-# 3) 設定工作目錄並複製需求檔
+# 4) 設定工作目錄、複製 requirements
 WORKDIR /app
 COPY requirements.txt .
 
-# 4) 安裝 Python 套件（包含 ta-lib binding）
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+# 5) 升級 pip 工具並安裝 TA-Lib binding（無隔離編譯）
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-build-isolation TA-Lib==0.4.24
 
-# 5) 複製程式碼
+# 6) 安裝其餘套件
+RUN pip install -r requirements.txt
+
+# 7) 複製並啟動專案
 COPY . /app
-
-# 6) 啟動指令 (依專案需求調整)
-#   這裡以 Gunicorn 啟動 FastAPI 為例
 CMD ["gunicorn", "main:app", "--bind", "0.0.0.0:$PORT", "--workers", "4"]
