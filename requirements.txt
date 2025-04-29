@@ -1,4 +1,6 @@
-# 其他套件...
+- numpy
++ numpy==1.23.5
+
 annotated-types
 anyio
 beautifulsoup4
@@ -14,7 +16,7 @@ h11
 idna
 joblib
 multitasking
-numpy
+- numpy
 packaging
 pandas
 peewee

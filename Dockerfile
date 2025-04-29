@@ -1,7 +1,7 @@
 # 1) 基底映像
 FROM python:3.10-slim
 
-# 2) 安裝編譯工具 & C 原生庫依賴
+# 2) 安裝系統編譯工具 & CA 憑證
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       build-essential \
@@ -20,17 +20,20 @@ RUN wget -qO /tmp/ta-lib-0.4.0-src.tar.gz \
       make install && \
     rm -rf /tmp/ta-lib-0.4.0-src.tar.gz /usr/src/ta-lib
 
-# 4) 設定工作目錄、複製 requirements
+# 4) 複製 requirements
 WORKDIR /app
 COPY requirements.txt .
 
-# 5) 升級 pip 工具並安裝 TA-Lib binding（無隔離編譯）
+# 5) 升級 pip/setuptools/​wheel，先安裝指定版本的 NumPy
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install --no-build-isolation TA-Lib==0.4.24
+    pip install numpy==1.23.5
 
-# 6) 安裝其餘套件
+# 6) 單獨安裝 TA-Lib binding（使用本機 C lib、無 build 隔離）
+RUN pip install --no-build-isolation TA-Lib==0.4.24
+
+# 7) 安裝其他相依套件
 RUN pip install -r requirements.txt
 
-# 7) 複製並啟動專案
+# 8) 複製程式並啟動
 COPY . /app
 CMD ["gunicorn", "main:app", "--bind", "0.0.0.0:$PORT", "--workers", "4"]
