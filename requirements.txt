@@ -1,3 +1,4 @@
+# 其他套件...
 annotated-types
 anyio
 beautifulsoup4
@@ -38,3 +39,6 @@ urllib3
 uvicorn
 xgboost
 yfinance
+
+# 新增 TA-Lib binding
+TA-Lib==0.4.24
