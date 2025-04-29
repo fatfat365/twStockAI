@@ -38,4 +38,4 @@ RUN pip install -r requirements.txt
 COPY . /app
 
 # 啟動指令：使用 uvicorn 啟動 FastAPI 應用
-CMD ["sh", "-c", "uvicorn twStockSrvXGBoots:app --host 0.0.0.0 --port $PORT"]
+CMD uvicorn twStockSrvXGBoots:app --host 0.0.0.0 --port 5555
