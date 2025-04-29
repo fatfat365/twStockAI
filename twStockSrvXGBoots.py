@@ -42,7 +42,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # Redis 快取設定
 # REDIS_URL = "redis://localhost:6379"
-REDIS_URL = os.getenv("REDIS_URL","redis://centerbeam.proxy.rlwy.net:10029")
+REDIS_URL = os.getenv("REDIS_URL","redis://default:sMQGdhDtCmLBcoOgLtLFmbQoREsGJMnr@redis.railway.internal:6379")
 redis_client = redis.from_url(REDIS_URL)
 
 # 模型路徑設定
