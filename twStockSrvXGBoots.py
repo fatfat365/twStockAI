@@ -47,7 +47,7 @@ print(REDIS_URL)
 redis_client = redis.from_url(REDIS_URL, decode_responses=True)
 
 # 模型路徑設定
-MODELS_DIR = "models"
+MODELS_DIR = "\data\models"
 os.makedirs(MODELS_DIR, exist_ok=True)
 
 # 快取時間設定（秒）
@@ -387,6 +387,7 @@ def get_stock_data(stock_id: str):
             # 先嘗試上市股票
             ticker_symbol = f"{stock_id}.TW"
             ticker = yf.Ticker(ticker_symbol)
+            logger.error(f"己載入上市股票: {str(e)}")
             df = ticker.history(
                 start=start_date.strftime('%Y-%m-%d'),
                 end=end_date.strftime('%Y-%m-%d'),
@@ -397,6 +398,7 @@ def get_stock_data(stock_id: str):
                 # 如果上市股票沒有資料，嘗試上櫃股票
                 ticker_symbol = f"{stock_id}.TWO"
                 ticker = yf.Ticker(ticker_symbol)
+                logger.error(f"己載入上櫃股票: {str(e)}")
                 df = ticker.history(
                     start=start_date.strftime('%Y-%m-%d'),
                     end=end_date.strftime('%Y-%m-%d'),
@@ -707,7 +709,7 @@ async def startup():
 @app.get("/predict/{stock_id}", dependencies=[Depends(RateLimiter(times=100, minutes=1))])
 async def predict(stock_id: str):
     try:
-        # 載入模型和 scaler
+        # 載入模型和 scalerload_model_and_scaler
         model, scaler = load_model_and_scaler(stock_id)
 
         # 獲取股票數據
