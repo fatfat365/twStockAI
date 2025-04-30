@@ -372,112 +372,43 @@ def prepare_features(df):
 
 
 def get_stock_data(stock_id: str):
-    """獲取股票數據"""
+    """
+    從 Yahoo Finance 獲取股票數據，上市（.TW）與上櫃（.TWO）自動判斷，兩者都失敗才報錯
+    """
+    import yfinance as yf
+    import pytz
+    from datetime import datetime, timedelta
+    import time
+
     try:
         tz = pytz.timezone('Asia/Taipei')
         end_date = datetime.now(tz)
-        start_date = end_date - timedelta(days=365)  # 增加為一年歷史數據
+        start_date = end_date - timedelta(days=365)
 
-        # 判斷是上市還是上櫃股票
-        # 上市股票代號範圍：1000-9999
-        # 上櫃股票代號範圍：1000-9999
-        # 需要根據實際情況判斷
-        try:
-            stock_num = int(stock_id)
-            # 先嘗試上市股票
-            ticker_symbol = f"{stock_id}.TW"
-            ticker = yf.Ticker(ticker_symbol)
-            logger.error(f"己載入上市股票: {str(e)}")
-            df = ticker.history(
-                start=start_date.strftime('%Y-%m-%d'),
-                end=end_date.strftime('%Y-%m-%d'),
-                interval='1d'
-            )
-            
-            if df.empty:
-                # 如果上市股票沒有資料，嘗試上櫃股票
-                ticker_symbol = f"{stock_id}.TWO"
+        # 先嘗試上市（.TW），再嘗試上櫃（.TWO）
+        for market_suffix, market_name in [("TW", "上市"), ("TWO", "上櫃")]:
+            try:
+                ticker_symbol = f"{stock_id}.{market_suffix}"
                 ticker = yf.Ticker(ticker_symbol)
-                logger.error(f"己載入上櫃股票: {str(e)}")
                 df = ticker.history(
                     start=start_date.strftime('%Y-%m-%d'),
                     end=end_date.strftime('%Y-%m-%d'),
                     interval='1d'
                 )
-                is_otc = True
-            else:
-                is_otc = False
-                
-            logger.info(f"獲取股票 {stock_id} 資料，市場: {'上櫃' if is_otc else '上市'}")
-            
-        except Exception as e:
-            logger.error(f"判斷股票市場時發生錯誤: {str(e)}")
-            raise ValueError(f"無法判斷股票 {stock_id} 的市場")
-
-        # 嘗試多次獲取數據
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                if df.empty:
-                    logger.warning(f"第 {attempt + 1} 次嘗試獲取股票 {stock_id} 數據失敗，數據為空")
-                    if attempt < max_retries - 1:
-                        time.sleep(2)  # 等待2秒後重試
-                        continue
-                    raise ValueError(f"無法獲取股票 {stock_id} 的資料")
-
-                # 檢查數據量
-                if len(df) < 20:
-                    logger.warning(f"第 {attempt + 1} 次嘗試獲取股票 {stock_id} 數據，但數據量不足（{len(df)}筆）")
-                    if attempt < max_retries - 1:
-                        time.sleep(2)  # 等待2秒後重試
-                        continue
-                    raise ValueError(f"股票 {stock_id} 的歷史數據不足（{len(df)}筆），至少需要20筆數據進行分析")
-
-                # 如果數據量足夠，跳出重試循環
-                break
-
+                if not df.empty and len(df) >= 20:
+                    logger.info(f"獲取股票 {stock_id} 資料，市場: {market_name}")
+                    df = df.copy()
+                    df.reset_index(inplace=True)
+                    # 統一欄位名稱
+                    df.columns = [col.capitalize() if col != "Date" else "Date" for col in df.columns]
+                    df["Date"] = pd.to_datetime(df["Date"]).dt.strftime('%Y-%m-%d')
+                    return df
             except Exception as e:
-                if attempt < max_retries - 1:
-                    logger.warning(f"第 {attempt + 1} 次嘗試獲取股票 {stock_id} 數據失敗: {str(e)}")
-                    time.sleep(2)  # 等待2秒後重試
-                else:
-                    raise
+                logger.warning(f"嘗試獲取 {stock_id}.{market_suffix} 數據失敗: {str(e)}")
+                time.sleep(1)  # 避免短時間內多次請求
 
-        # 創建數據的副本以避免 SettingWithCopyWarning
-        df = df.copy()
-        
-        df.reset_index(inplace=True)
-        df["Date"] = pd.to_datetime(df["Date"]).dt.strftime('%Y-%m-%d')
-
-        # 確保必要的列存在
-        required_columns = ['Open', 'High', 'Low', 'Close', 'Volume']
-        missing_columns = [col for col in required_columns if col not in df.columns]
-        if missing_columns:
-            raise ValueError(f"缺少必要的數據列: {missing_columns}")
-
-        # 確保數據類型正確
-        for col in required_columns:
-            df.loc[:, col] = pd.to_numeric(df[col], errors='coerce')
-            df.loc[:, col] = df[col].astype(np.float64)
-
-        # 移除任何包含 NaN 的行
-        df = df.dropna(subset=required_columns)
-
-        # 再次檢查數據量
-        if len(df) < 20:
-            raise ValueError(f"股票 {stock_id} 的歷史數據不足（{len(df)}筆），至少需要20筆數據進行分析")
-
-        # 記錄數據統計信息
-        logger.info(f"股票 {stock_id} 數據統計:")
-        logger.info(f"市場: {'上櫃' if is_otc else '上市'}")
-        logger.info(f"總數據筆數: {len(df)}")
-        logger.info(f"數據日期範圍: {df['Date'].min()} 至 {df['Date'].max()}")
-        logger.info(f"收盤價範圍: {df['Close'].min()} 至 {df['Close'].max()}")
-        logger.info(f"成交量範圍: {df['Volume'].min()} 至 {df['Volume'].max()}")
-        for col in required_columns:
-            logger.info(f"{col}: {df[col].dtype}")
-
-        return df
+        # 兩種市場都失敗才報錯
+        raise ValueError(f"無法獲取股票 {stock_id} 的資料，上市與上櫃皆無資料或網路異常")
     except Exception as e:
         logger.error(f"獲取股票 {stock_id} 資料時發生錯誤: {str(e)}")
         raise ValueError(f"獲取股票 {stock_id} 資料時發生錯誤: {str(e)}")
