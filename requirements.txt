@@ -39,4 +39,5 @@ tzdata
 urllib3
 uvicorn
 xgboost
-yfinance
+yfinance>=0.2.33
+requests
